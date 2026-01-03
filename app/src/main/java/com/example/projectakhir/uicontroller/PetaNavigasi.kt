@@ -1,4 +1,4 @@
-package com.example.projectakhir.uicontrollerimport
+package com.example.projectakhir.uicontroller
 
 import androidx.compose.runtime.Composable
 
@@ -7,9 +7,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.example.projectakhir.uicontroller.route.DestinasiEntry
 import com.example.projectakhir.uicontroller.route.DestinasiHome
+import com.example.projectakhir.uicontroller.route.DestinasiKelolaProduk
 import com.example.projectakhir.uicontroller.route.DestinasiLogin
+import com.example.projectakhir.view.HalamanEntry
 import com.example.projectakhir.view.HalamanHome
+import com.example.projectakhir.view.HalamanKelolaProduk
 import com.example.projectakhir.view.HalamanLogin
 import com.example.projectakhir.viewmodel.provider.PenyediaViewModel
 
@@ -26,22 +30,36 @@ fun NavigasiApp(
         composable(DestinasiLogin.route) {
             HalamanLogin(
                 onLoginSuccess = {
-                    // --- KESALAHAN #3: Navigasi ke rute yang salah ---
-                    // PERBAIKAN: Gunakan rute dari DestinasiHome
                     navController.navigate(DestinasiHome.route) {
                         popUpTo(DestinasiLogin.route) { inclusive = true }
                     }
                 },
                 onForgotPasswordClicked = { /* TODO */ },
                 onCreateAccountClicked = { /* TODO */ },
-                // Pastikan ViewModel dibuat menggunakan factory
                 loginViewModel = viewModel(factory = PenyediaViewModel.Factory)
             )
         }
-        // Pastikan rute di sini juga menggunakan konstanta dari DestinasiHome
         composable(route = DestinasiHome.route) {
             HalamanHome(
+                onKelolaProdukClicked = {
+                    navController.navigate(DestinasiKelolaProduk.route)
+                },
+                // --------------------------
                 homeViewModel = viewModel(factory = PenyediaViewModel.Factory)
+            )
+        }
+        composable(route = DestinasiKelolaProduk.route) {
+            HalamanKelolaProduk(
+                onBackClicked = { navController.popBackStack() },onAddClicked = {
+                    navController.navigate(DestinasiEntry.route)
+                },
+                kelolaProdukViewModel = viewModel(factory = PenyediaViewModel.Factory)
+            )
+        }
+        composable(route = DestinasiEntry.route) {
+            HalamanEntry(
+                onNavigateUp = { navController.popBackStack() },
+                entryViewModel = viewModel(factory = PenyediaViewModel.Factory)
             )
         }
     }

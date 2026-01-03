@@ -11,7 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.rememberNavController
 import com.example.projectakhir.ui.theme.ProjectAkhirTheme
-import com.example.projectakhir.uicontrollerimport.NavigasiApp
+import com.example.projectakhir.uicontroller.NavigasiApp
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

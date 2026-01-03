@@ -5,7 +5,9 @@ import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.projectakhir.repositori.AplikasiManageProduk
+import com.example.projectakhir.viewmodel.EntryViewModel
 import com.example.projectakhir.viewmodel.HomeViewModel
+import com.example.projectakhir.viewmodel.KelolaProdukViewModel
 import com.example.projectakhir.viewmodel.LoginViewModel
 
 object PenyediaViewModel {
@@ -19,6 +21,12 @@ object PenyediaViewModel {
 
         initializer {
             HomeViewModel(aplikasiManageProduk().container.repositoriDataProduk)
+        }
+        initializer {
+            KelolaProdukViewModel(aplikasiManageProduk().container.repositoriDataProduk)
+        }
+        initializer {
+            EntryViewModel(aplikasiManageProduk().container.repositoriDataProduk)
         }
     }
 }

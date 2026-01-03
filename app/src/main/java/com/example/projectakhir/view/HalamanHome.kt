@@ -2,7 +2,19 @@ package com.example.projectakhir.view
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -29,13 +41,17 @@ val limeColor = Color(0xFFD8FF00)
 
 @Composable
 fun HalamanHome(
+    onKelolaProdukClicked: () -> Unit,
+    // onNavigateToLaporan: () -> Unit, // Parameter ini belum digunakan, bisa dihapus sementara
     modifier: Modifier = Modifier,
     homeViewModel: HomeViewModel = viewModel(factory = PenyediaViewModel.Factory)
 ) {
     val state = homeViewModel.homeUIState
 
     Scaffold(
-        bottomBar = { BottomNavigationBar() }
+        // --- KESALAHAN #1: onKelolaProdukClicked belum diteruskan ke BottomNavigationBar ---
+        // PERBAIKAN: Teruskan callback ke BottomNavigationBar
+        bottomBar = { BottomNavigationBar(onKelolaProdukClicked = onKelolaProdukClicked) }
     ) { paddingValues ->
         Column(
             modifier = modifier
@@ -58,7 +74,8 @@ fun HalamanHome(
 
             Text("Quick Actions", fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
             Spacer(modifier = Modifier.height(16.dp))
-            KelolaProdukCard()
+            // Card ini sudah benar, memanggil onKelolaProdukClicked
+            KelolaProdukCard(onClick = onKelolaProdukClicked)
             Spacer(modifier = Modifier.height(16.dp))
 
             Row(
@@ -73,6 +90,7 @@ fun HalamanHome(
     }
 }
 
+// ... (HeaderSection, InfoCard, KelolaProdukCard, ActionCard tidak perlu diubah) ...
 @Composable
 fun HeaderSection() {
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -112,11 +130,13 @@ fun RowScope.InfoCard(label: String, value: String) {
 }
 
 @Composable
-fun KelolaProdukCard() {
+fun KelolaProdukCard(onClick: () -> Unit) {
     Card(
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = limeColor),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Row(
@@ -175,18 +195,20 @@ fun RowScope.ActionCard(label: String, imageResId: Int) {
     }
 }
 
+
+// --- FUNGSI YANG DIPERBAIKI ---
 @Composable
-fun BottomNavigationBar() {
+fun BottomNavigationBar(onKelolaProdukClicked: () -> Unit) {
     NavigationBar(
         containerColor = Color.White,
         contentColor = Color.Gray
     ) {
-        // 1. Home
+        // 1. Home (Selected)
         NavigationBarItem(
             icon = { Icon(Icons.Default.Home, contentDescription = "Home", modifier = Modifier.size(28.dp)) },
             label = { Text("Home") },
-            selected = true,
-            onClick = {},
+            selected = true, // Ini adalah halaman Home, jadi 'selected' harus true
+            onClick = {}, // Tidak perlu aksi karena sudah di halaman ini
             colors = NavigationBarItemDefaults.colors(
                 selectedIconColor = Color.Black,
                 selectedTextColor = Color.Black,
@@ -195,34 +217,37 @@ fun BottomNavigationBar() {
                 unselectedTextColor = Color.Gray
             )
         )
-        NavigationBarItem(
-            icon = { Image(painter = painterResource(id = R.drawable.laporan), contentDescription = "Laporan", modifier = Modifier.size(28.dp)) },
-            label = { Text("Laporan") }, selected = false, onClick = {}
-        )
+
         // 2. Laporan
         NavigationBarItem(
             icon = { Image(painter = painterResource(id = R.drawable.laporan), contentDescription = "Laporan", modifier = Modifier.size(28.dp)) },
-            label = { Text("Laporan") }, selected = false, onClick = {}
+            label = { Text("Laporan") },
+            selected = false,
+            onClick = { /* TODO: Navigasi ke Halaman Laporan */ }
         )
 
-        // --- ITEM BARU YANG DITAMBAHKAN ---
-        // 3. Kelola Produk
+        // 3. Kelola Produk (Ini yang benar)
         NavigationBarItem(
             icon = { Image(painter = painterResource(id = R.drawable.kelola), contentDescription = "Kelola Produk", modifier = Modifier.size(28.dp)) },
-            label = { Text("Kelola") }, selected = false, onClick = {}
+            label = { Text("Kelola") },
+            selected = false,
+            onClick = onKelolaProdukClicked // Gunakan callback di sini
         )
-        // --------------------------------
 
         // 4. Transaksi
         NavigationBarItem(
             icon = { Image(painter = painterResource(id = R.drawable.transaksi), contentDescription = "Transaksi", modifier = Modifier.size(28.dp)) },
-            label = { Text("Transaksi") }, selected = false, onClick = {}
+            label = { Text("Transaksi") },
+            selected = false,
+            onClick = { /* TODO: Navigasi ke Halaman Transaksi */ }
         )
 
         // 5. Profile
         NavigationBarItem(
             icon = { Image(painter = painterResource(id = R.drawable.profile), contentDescription = "Profile", modifier = Modifier.size(28.dp)) },
-            label = { Text("Profile") }, selected = false, onClick = {}
+            label = { Text("Profile") },
+            selected = false,
+            onClick = { /* TODO: Navigasi ke Halaman Profile */ }
         )
     }
 }
@@ -231,6 +256,7 @@ fun BottomNavigationBar() {
 @Composable
 fun PreviewHalamanHome() {
     ProjectAkhirTheme {
-        HalamanHome()
+        // PERBAIKAN: Tambahkan lambda kosong agar Preview tidak error
+        HalamanHome(onKelolaProdukClicked = {})
     }
 }
