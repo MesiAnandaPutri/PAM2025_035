@@ -19,7 +19,9 @@ interface RepositoriDataProduk {
     // Transaksi & Restock
     suspend fun restockProduct(id: Int, qtyIn: Int): BaseResponse
     suspend fun createTransaction(produkId: Int, userId: Int, qtyOut: Int): TransactionResponse
+    suspend fun getHistory(): List<HistoryLog>
 }
+
 
 class NetworkRepositoriDataProduk(
     private val serviceApiKatalog: ServiceApiKatalog
@@ -49,5 +51,8 @@ class NetworkRepositoriDataProduk(
     override suspend fun createTransaction(produkId: Int, userId: Int, qtyOut: Int): TransactionResponse {
         val request = TransactionRequest(produk_id = produkId, user_id = userId, qty_out = qtyOut)
         return serviceApiKatalog.createTransaction(request)
+    }
+    override suspend fun getHistory(): List<HistoryLog> {
+        return serviceApiKatalog.getHistory().data
     }
 }

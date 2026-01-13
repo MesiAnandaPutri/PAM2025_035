@@ -50,8 +50,20 @@ fun NavigasiApp(
                             restoreState = true
                         }
                     },
-                    onNavigateToLaporan = { /* TODO */ },
-                    onNavigateToTransaksi = { /* TODO */ },
+                    onNavigateToTransaksi = {
+                        navController.navigate(DestinasiTransaksi.route) {
+                            popUpTo(navController.graph.startDestinationId) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                    onNavigateToLaporan = {
+                        navController.navigate(DestinasiLaporan.route) {
+                            popUpTo(navController.graph.startDestinationId) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
                     onNavigateToProfile = { /* TODO */ }
                 )
             }
@@ -115,12 +127,18 @@ fun NavigasiApp(
                     onNavigateUp = { navController.popBackStack() }
                 )
             }
-
             composable(route = DestinasiEntry.route) {
                 HalamanEntry(
                     onNavigateUp = { navController.popBackStack() }
                 )
             }
+            composable(route = DestinasiTransaksi.route) {
+                HalamanTransaksi()
+            }
+            composable(route = DestinasiLaporan.route) {
+                HalamanLaporan()
+            }
+
         }
     }
 }

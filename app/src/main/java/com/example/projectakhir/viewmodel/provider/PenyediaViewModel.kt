@@ -10,7 +10,9 @@ import com.example.projectakhir.viewmodel.EditViewModel
 import com.example.projectakhir.viewmodel.EntryViewModel
 import com.example.projectakhir.viewmodel.HomeViewModel
 import com.example.projectakhir.viewmodel.KelolaProdukViewModel
+import com.example.projectakhir.viewmodel.LaporanViewModel
 import com.example.projectakhir.viewmodel.LoginViewModel
+import com.example.projectakhir.viewmodel.TransaksiViewModel
 
 object PenyediaViewModel {
     val Factory = viewModelFactory {
@@ -31,6 +33,14 @@ object PenyediaViewModel {
                 savedStateHandle = this.createSavedStateHandle(),
                 repositoriDataProduk = aplikasiManageProduk().container.repositoriDataProduk
             )
+        }
+        // Tambahkan di dalam object PenyediaViewModel.Factory
+        initializer {
+            TransaksiViewModel(aplikasiManageProduk().container.repositoriDataProduk)
+        }
+        // Tambahkan di dalam object PenyediaViewModel.Factory
+        initializer {
+            LaporanViewModel(aplikasiManageProduk().container.repositoriDataProduk)
         }
     }
 }
