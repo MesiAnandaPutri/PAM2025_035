@@ -12,7 +12,9 @@ import java.io.IOException
 
 data class KelolaProdukUIState(
     val listProduk: List<DataProduk> = listOf(),
-    val produkForDeletion: DataProduk? = null // Produk yang akan dihapus, null jika tidak ada
+    val produkForDeletion: DataProduk? = null,
+    val produkForRestock: DataProduk? = null,
+    val restockAmount: String = ""
 )
 
 class KelolaProdukViewModel(private val repositoriDataProduk: RepositoriDataProduk) : ViewModel() {
@@ -37,6 +39,39 @@ class KelolaProdukViewModel(private val repositoriDataProduk: RepositoriDataProd
     }
     fun setProdukForDeletion(produk: DataProduk) {
         kelolaProdukUIState = kelolaProdukUIState.copy(produkForDeletion = produk)
+    }
+    fun setProdukForRestock(produk: DataProduk) {
+        kelolaProdukUIState = kelolaProdukUIState.copy(
+            produkForRestock = produk,
+            restockAmount = ""
+        )
+    }
+
+    fun updateRestockAmount(amount: String) {
+        if (amount.all { it.isDigit() }) {
+            kelolaProdukUIState = kelolaProdukUIState.copy(restockAmount = amount)
+        }
+    }
+
+    fun dismissRestockDialog() {
+        kelolaProdukUIState = kelolaProdukUIState.copy(produkForRestock = null)
+    }
+
+    fun restockProduk() {
+        val qty = kelolaProdukUIState.restockAmount.toIntOrNull() ?: 0
+        val produkId = kelolaProdukUIState.produkForRestock?.produk_id
+
+        if (qty > 0 && produkId != null) {
+            viewModelScope.launch {
+                try {
+                    repositoriDataProduk.restockProduct(produkId, qty)
+                    dismissRestockDialog()
+                    getProduk() // Refresh data stok terbaru
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
     }
 
     // --- FUNGSI BARU: Untuk menyembunyikan dialog ---
