@@ -10,21 +10,27 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.projectakhir.R
 import com.example.projectakhir.ui.theme.ProjectAkhirTheme
 import com.example.projectakhir.uicontroller.route.DestinasiHome
 import com.example.projectakhir.uicontroller.route.DestinasiKelolaProduk
+import com.example.projectakhir.uicontroller.route.DestinasiLaporan
+import com.example.projectakhir.uicontroller.route.DestinasiProfile
+import com.example.projectakhir.uicontroller.route.DestinasiTransaksi
 import com.example.projectakhir.viewmodel.HomeViewModel
 import com.example.projectakhir.viewmodel.provider.PenyediaViewModel
 
@@ -33,55 +39,77 @@ val limeColor = Color(0xFFD8FF00)
 @Composable
 fun HalamanHome(
     onKelolaProdukClicked: () -> Unit,
-    // --- PERBAIKAN: Terima BottomBar sebagai parameter ---
-    bottomBar: @Composable () -> Unit,
+    onTransaksiClicked: () -> Unit,
+    onLaporanClicked: () -> Unit,
     modifier: Modifier = Modifier,
     homeViewModel: HomeViewModel = viewModel(factory = PenyediaViewModel.Factory)
 ) {
     val state = homeViewModel.homeUIState
+    val lifecycleOwner = LocalLifecycleOwner.current
 
-    Scaffold(
-        // Gunakan BottomBar yang diterima dari parameter
-        bottomBar = bottomBar
-    ) { paddingValues ->
-        Column(
-            modifier = modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp)
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                homeViewModel.getProduk()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(Color(0xFFF8F8F8))
+            .padding(16.dp)
+    ) {
+        HeaderSection(username = state.username)
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Info Cards
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            HeaderSection()
-            Spacer(modifier = Modifier.height(24.dp))
+            InfoCard(label = "Produk", value = state.listProduk.size.toString())
+            InfoCard(label = "Transaksi", value = state.jumlahTransaksi.toString())
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceAround
-            ) {
-                InfoCard(label = "Produk", value = state.listProduk.size.toString())
-                InfoCard(label = "Transaksi", value = "89") // Data dummy
-                InfoCard(label = "Pendapatan", value = "12.5M") // Data dummy
-            }
-            Spacer(modifier = Modifier.height(24.dp))
+            val displayPendapatan = if (state.totalPendapatan >= 1_000_000) "${state.totalPendapatan / 1_000_000}M"
+            else if (state.totalPendapatan >= 1_000) "${state.totalPendapatan / 1_000}K"
+            else state.totalPendapatan.toString()
 
-            Text("Quick Actions", fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
-            Spacer(modifier = Modifier.height(16.dp))
-            KelolaProdukCard(onClick = onKelolaProdukClicked) // Ini sudah benar
-            Spacer(modifier = Modifier.height(16.dp))
+            InfoCard(label = "Pendapatan", value = displayPendapatan)
+        }
+        Spacer(modifier = Modifier.height(24.dp))
+        Text("Quick Actions", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+        Spacer(modifier = Modifier.height(16.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceAround
-            ) {
-                ActionCard(label = "Transaksi", imageResId = R.drawable.transaksi)
-                ActionCard(label = "Laporan", imageResId = R.drawable.laporan)
-                ActionCard(label = "Profile", imageResId = R.drawable.profile)
-            }
+        KelolaProdukCard(onClick = onKelolaProdukClicked)
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            ActionCard(
+                label = "Transaksi",
+                imageResId = R.drawable.transaksi,
+                modifier = Modifier.clickable { onTransaksiClicked() }
+            )
+            ActionCard(
+                label = "Laporan",
+                imageResId = R.drawable.laporan,
+                modifier = Modifier.clickable { onLaporanClicked() }
+            )
+            ActionCard(
+                label = "Profile",
+                imageResId = R.drawable.profile,
+                modifier = Modifier.clickable { /* Handle Profile */ }
+            )
         }
     }
 }
 
 
-// --- KOMPONEN BARU YANG LEBIH GENERIC ---
 @Composable
 fun AppBottomNavigationBar(
     currentRoute: String?,
@@ -91,63 +119,45 @@ fun AppBottomNavigationBar(
     onNavigateToTransaksi: () -> Unit,
     onNavigateToProfile: () -> Unit,
 ) {
-    NavigationBar(
-        containerColor = Color.White,
-        contentColor = Color.Gray
-    ) {
-        // 1. Home
+    NavigationBar(containerColor = Color.White) {
         NavigationBarItem(
-            icon = { Icon(Icons.Default.Home, contentDescription = "Home", modifier = Modifier.size(28.dp)) },
-            label = { Text("Home") },
             selected = currentRoute == DestinasiHome.route,
             onClick = onNavigateToHome,
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = Color.Black,
-                selectedTextColor = Color.Black,
-                indicatorColor = limeColor,
-                unselectedIconColor = Color.Gray,
-                unselectedTextColor = Color.Gray
-            )
+            icon = { Icon(Icons.Default.Home, contentDescription = null) },
+            label = { Text("Home") },
+            colors = NavigationBarItemDefaults.colors(indicatorColor = limeColor)
         )
-
-        // 2. Laporan
         NavigationBarItem(
-            icon = { Image(painter = painterResource(id = R.drawable.laporan), contentDescription = "Laporan", modifier = Modifier.size(28.dp)) },
-            label = { Text("Laporan") },
-            selected = currentRoute == "laporan", // Ganti dengan rute laporan nanti
-            onClick = onNavigateToLaporan
+            selected = currentRoute == DestinasiLaporan.route,
+            onClick = onNavigateToLaporan,
+            icon = { Image(painterResource(R.drawable.laporan), null, Modifier.size(24.dp)) },
+            label = { Text("Laporan") }
         )
-
-        // 3. Kelola
         NavigationBarItem(
-            icon = { Image(painter = painterResource(id = R.drawable.kelola), contentDescription = "Kelola", modifier = Modifier.size(28.dp)) },
-            label = { Text("Kelola") },
             selected = currentRoute == DestinasiKelolaProduk.route,
-            onClick = onNavigateToKelola
+            onClick = onNavigateToKelola,
+            icon = { Image(painterResource(R.drawable.kelola), null, Modifier.size(24.dp)) },
+            label = { Text("Kelola") }
         )
-
-        // 4. Transaksi
         NavigationBarItem(
-            icon = { Image(painter = painterResource(id = R.drawable.transaksi), contentDescription = "Transaksi", modifier = Modifier.size(28.dp)) },
-            label = { Text("Transaksi") },
-            selected = currentRoute == "transaksi", // Ganti dengan rute transaksi nanti
-            onClick = onNavigateToTransaksi
+            selected = currentRoute == DestinasiTransaksi.route,
+            onClick = onNavigateToTransaksi,
+            icon = { Image(painterResource(R.drawable.transaksi), null, Modifier.size(24.dp)) },
+            label = { Text("Transaksi") }
         )
-
-        // 5. Profile
         NavigationBarItem(
-            icon = { Image(painter = painterResource(id = R.drawable.profile), contentDescription = "Profile", modifier = Modifier.size(28.dp)) },
-            label = { Text("Profile") },
-            selected = currentRoute == "profile", // Ganti dengan rute profile nanti
-            onClick = onNavigateToProfile
+            selected = currentRoute == DestinasiProfile.route,
+            onClick = onNavigateToProfile,
+            icon = { Image(painterResource(R.drawable.profile), null, Modifier.size(24.dp)) },
+            label = { Text("Profile") }
         )
     }
 }
 
 
-// ... (Sisa Composable seperti HeaderSection, InfoCard, dll. tidak perlu diubah) ...
+
 @Composable
-fun HeaderSection() {
+fun HeaderSection(username: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Image(
             painter = painterResource(id = R.drawable.profile),
@@ -159,7 +169,7 @@ fun HeaderSection() {
         Spacer(modifier = Modifier.width(12.dp))
         Column {
             Text("Halo,", fontSize = 16.sp, color = Color.Gray)
-            Text("Admin Store", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Text(username, fontSize = 20.sp, fontWeight = FontWeight.Bold) // Gunakan parameter
         }
     }
 }
@@ -225,27 +235,23 @@ fun KelolaProdukCard(onClick: () -> Unit) {
 }
 
 @Composable
-fun RowScope.ActionCard(label: String, imageResId: Int) {
+fun RowScope.ActionCard(label: String, imageResId: Int, modifier: Modifier = Modifier) {
     Card(
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        modifier = Modifier
+        modifier = modifier
             .weight(1f)
-            .padding(horizontal = 4.dp)
+            .height(100.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Column(
-            modifier = Modifier.padding(vertical = 16.dp, horizontal = 8.dp),
+            modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Image(
-                painter = painterResource(id = imageResId),
-                contentDescription = label,
-                modifier = Modifier.size(32.dp)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(label, fontSize = 14.sp, textAlign = TextAlign.Center)
+            Image(painterResource(imageResId), null, Modifier.size(32.dp))
+            Spacer(Modifier.height(8.dp))
+            Text(label, fontSize = 12.sp)
         }
     }
 }
@@ -255,6 +261,10 @@ fun RowScope.ActionCard(label: String, imageResId: Int) {
 @Composable
 fun PreviewHalamanHome() {
     ProjectAkhirTheme {
-        HalamanHome(onKelolaProdukClicked = {}, bottomBar = {})
+        HalamanHome(
+            onKelolaProdukClicked = {},
+            onTransaksiClicked = {}, // Parameter yang dibutuhkan
+            onLaporanClicked = {}    // Parameter yang dibutuhkan
+        )
     }
 }

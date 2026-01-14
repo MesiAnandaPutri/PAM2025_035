@@ -12,6 +12,8 @@ import java.io.IOException
 
 data class KelolaProdukUIState(
     val listProduk: List<DataProduk> = listOf(),
+    val filteredProduk: List<DataProduk> = listOf(), // Daftar yang sudah difilter
+    val searchQuery: String = "", // Teks pencarian
     val produkForDeletion: DataProduk? = null,
     val produkForRestock: DataProduk? = null,
     val restockAmount: String = ""
@@ -28,9 +30,13 @@ class KelolaProdukViewModel(private val repositoriDataProduk: RepositoriDataProd
 
     fun getProduk() {
         viewModelScope.launch {
-            try {
+            try  {
+                val produk = repositoriDataProduk.getProduk()
                 kelolaProdukUIState = kelolaProdukUIState.copy(
-                    listProduk = repositoriDataProduk.getProduk()
+                    listProduk = produk,
+                    // Saat pertama kali dimuat, filteredProduk sama dengan listProduk
+                    filteredProduk = if (kelolaProdukUIState.searchQuery.isEmpty()) produk
+                    else produk.filter { it.produk_name.contains(kelolaProdukUIState.searchQuery, ignoreCase = true) }
                 )
             } catch (e: IOException) {
                 e.printStackTrace()
@@ -94,5 +100,16 @@ class KelolaProdukViewModel(private val repositoriDataProduk: RepositoriDataProd
                 getProduk()
             }
         }
+    }
+
+    fun onSearchQueryChange(newQuery: String) {
+        val filtered = kelolaProdukUIState.listProduk.filter {
+            it.produk_name.contains(newQuery, ignoreCase = true) ||
+                    it.kategori.contains(newQuery, ignoreCase = true)
+        }
+        kelolaProdukUIState = kelolaProdukUIState.copy(
+            searchQuery = newQuery,
+            filteredProduk = filtered
+        )
     }
 }

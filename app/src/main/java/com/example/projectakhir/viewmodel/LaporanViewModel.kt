@@ -12,7 +12,7 @@ import kotlinx.coroutines.launch
 
 data class LaporanUIState(
     val riwayatAktivitas: List<HistoryLog> = listOf(),
-    val listProduk: List<DataProduk> = listOf(), // Ditambahkan agar tidak error
+    val listProduk: List<DataProduk> = listOf(),
     val totalProduk: Int = 0,
     val stokMinimCount: Int = 0,
     val totalRestock: Int = 0,

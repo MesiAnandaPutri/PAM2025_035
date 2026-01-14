@@ -1,39 +1,38 @@
 package com.example.projectakhir.uicontroller
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.role
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import androidx.navigation.navArgument
+import com.example.projectakhir.repositori.AplikasiManageProduk
 import com.example.projectakhir.uicontroller.route.*
 import com.example.projectakhir.view.*
-import com.example.projectakhir.view.limeColor
 
 @Composable
 fun NavigasiApp(
     navController: NavHostController,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
+    val repositori = (LocalContext.current.applicationContext as AplikasiManageProduk).container.repositoriDataProduk
 
     Scaffold(
         bottomBar = {
-            val bottomBarShouldShow = currentRoute != DestinasiLogin.route &&
-                    currentRoute != DestinasiEntry.route &&
-                    currentRoute != DestinasiEdit.routeWithArgs
-
-            // Tampilkan BottomBar hanya di halaman yang memerlukannya
-            if (currentRoute != DestinasiLogin.route && currentRoute != DestinasiEntry.route) {
+            // Tampilkan BottomBar hanya jika bukan di halaman Login atau Entry
+            if (currentRoute != DestinasiLogin.route && currentRoute != DestinasiEntry.route && currentRoute != DestinasiEdit.routeWithArgs) {
                 AppBottomNavigationBar(
                     currentRoute = currentRoute,
                     onNavigateToHome = {
@@ -44,10 +43,18 @@ fun NavigasiApp(
                         }
                     },
                     onNavigateToKelola = {
-                        navController.navigate(DestinasiKelolaProduk.route) {
-                            popUpTo(navController.graph.startDestinationId) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
+                        // Ambil data user yang baru saja login
+                        val userLogin = repositori.currentUser
+
+                        if (userLogin?.role == "Admin") {
+                            navController.navigate(DestinasiKelolaProduk.route) {
+                                popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        } else {
+                            // Jika Staff, tampilkan pesan
+                            Toast.makeText(context, "Hanya Admin yang dapat mengakses Kelola Produk", Toast.LENGTH_SHORT).show()
                         }
                     },
                     onNavigateToTransaksi = {
@@ -64,20 +71,28 @@ fun NavigasiApp(
                             restoreState = true
                         }
                     },
-                    onNavigateToProfile = { /* TODO */ }
+                    onNavigateToProfile = {
+                        navController.navigate(DestinasiProfile.route) {
+                            popUpTo(navController.graph.startDestinationId) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
                 )
             }
         },
         floatingActionButton = {
-            // Tampilkan FloatingActionButton hanya saat berada di halaman Kelola Produk
-            if (currentRoute == DestinasiKelolaProduk.route) {
+            // Ambil role terbaru
+            val roleSekarang = repositori.currentUser?.role
+
+            if (currentRoute == DestinasiKelolaProduk.route && roleSekarang == "Admin") {
                 FloatingActionButton(
                     onClick = { navController.navigate(DestinasiEntry.route) },
                     containerColor = limeColor,
                     contentColor = Color.Black,
                     shape = CircleShape
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = "Tambah Produk")
+                    Icon(Icons.Default.Add, contentDescription = "Tambah")
                 }
             }
         }
@@ -94,51 +109,64 @@ fun NavigasiApp(
                             popUpTo(DestinasiLogin.route) { inclusive = true }
                         }
                     },
-                    onForgotPasswordClicked = { /* TODO */ },
-                    onCreateAccountClicked = { /* TODO */ }
+                    onForgotPasswordClicked = {},
+                    onCreateAccountClicked = {
+                        navController.navigate(DestinasiRegister.route)
+                    }
                 )
             }
 
             composable(route = DestinasiHome.route) {
                 HalamanHome(
-                    onKelolaProdukClicked = {
-                        navController.navigate(DestinasiKelolaProduk.route)
-                    },
-                    bottomBar = {} // Dibiarkan kosong karena sudah ditangani Scaffold utama
+                    onKelolaProdukClicked = { navController.navigate(DestinasiKelolaProduk.route) },
+                    onTransaksiClicked = { navController.navigate(DestinasiTransaksi.route) },
+                    onLaporanClicked = { navController.navigate(DestinasiLaporan.route) }
                 )
             }
 
             composable(route = DestinasiKelolaProduk.route) {
-                // Pemanggilan fungsi disederhanakan
                 HalamanKelolaProduk(
                     onBackClicked = { navController.popBackStack() },
-                    onEditClicked = { produkId ->
-                        navController.navigate("${DestinasiEdit.route}/$produkId")
-                    }
+                    onEditClicked = { id -> navController.navigate("${DestinasiEdit.route}/$id") }
                 )
             }
-            composable(
-                route = DestinasiEdit.routeWithArgs,
-                arguments = listOf(navArgument(DestinasiEdit.produkIdArg) {
-                    type = NavType.IntType
-                })
-            ) {
-                HalamanEdit(
-                    onNavigateUp = { navController.popBackStack() }
-                )
-            }
-            composable(route = DestinasiEntry.route) {
-                HalamanEntry(
-                    onNavigateUp = { navController.popBackStack() }
-                )
-            }
+
             composable(route = DestinasiTransaksi.route) {
                 HalamanTransaksi()
             }
+
             composable(route = DestinasiLaporan.route) {
                 HalamanLaporan()
             }
 
+            composable(
+                route = DestinasiEdit.routeWithArgs,
+                arguments = listOf(navArgument(DestinasiEdit.produkIdArg) { type = NavType.IntType })
+            ) {
+                HalamanEdit(onNavigateUp = { navController.popBackStack() })
+            }
+
+            composable(route = DestinasiEntry.route) {
+                HalamanEntry(onNavigateUp = { navController.popBackStack() })
+            }
+            composable(route = DestinasiProfile.route) {
+                HalamanProfile(
+                    onLogoutClick = {
+                        navController.navigate(DestinasiLogin.route) {
+                            // Hapus semua history navigasi agar tidak bisa "Back" ke Home setelah logout
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
+                )
+            }
+
+            composable(route = DestinasiRegister.route) {
+                HalamanRegister(
+                    onNavigateToLogin = {
+                        navController.popBackStack() // Kembali ke Login
+                    }
+                )
+            }
         }
     }
 }

@@ -43,6 +43,14 @@ fun HalamanEntry(
     // coroutineScope tidak lagi diperlukan di sini
     val uiState = entryViewModel.uiStateProduk
     val context = LocalContext.current // Diperlukan untuk menampilkan Toast
+    val isAdmin = entryViewModel.isAdmin()
+
+    LaunchedEffect(isAdmin) {
+        if (!isAdmin) {
+            Toast.makeText(context, "Hanya Admin yang diizinkan mengakses halaman ini", Toast.LENGTH_SHORT).show()
+            onNavigateUp()
+        }
+    }
 
     Card(
         modifier = modifier
@@ -105,7 +113,7 @@ fun HalamanEntry(
                             }
                         )
                     },
-                    enabled = uiState.isEntryValid, // Tombol aktif jika input valid
+                    enabled = uiState.isEntryValid && isAdmin, // Tombol aktif jika input valid
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = limeColor)

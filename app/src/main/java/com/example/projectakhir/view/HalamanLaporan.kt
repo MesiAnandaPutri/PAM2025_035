@@ -10,13 +10,17 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.projectakhir.R
 import com.example.projectakhir.viewmodel.LaporanViewModel
@@ -29,10 +33,20 @@ fun HalamanLaporan(
 ) {
     val uiState = viewModel.uiState
 
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.muatDataLaporan()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
     Column(modifier = modifier
         .fillMaxSize()
         .background(Color.White)) {
-        // --- HEADER ---
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -43,8 +57,6 @@ fun HalamanLaporan(
             Text("Laporan Stok", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
             Text("Riwayat aktivitas stok produk", fontSize = 14.sp, color = Color.DarkGray)
         }
-
-        // --- SUMMARY CARDS ---
         Row(
             modifier = Modifier
                 .fillMaxWidth()

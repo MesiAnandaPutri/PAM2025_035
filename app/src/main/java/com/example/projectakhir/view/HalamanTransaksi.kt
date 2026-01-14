@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -100,21 +101,29 @@ fun HalamanTransaksi(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 OutlinedTextField(
-                    value = uiState.searchQuery,
-                    onValueChange = { viewModel.updateSearch(it) },
-                    placeholder = { Text("Cari produk...") },
+                    value = uiState.searchQuery, // Mengambil teks dari ViewModel
+                    onValueChange = { viewModel.updateSearch(it) }, // Mengirim perubahan ke ViewModel
+                    placeholder = { Text("Cari produk ") },
                     leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                    trailingIcon = {
+                        // Tambahkan tombol silang untuk menghapus teks pencarian jika tidak kosong
+                        if (uiState.searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { viewModel.updateSearch("") }) {
+                                Icon(Icons.Default.Close, contentDescription = "Clear Search")
+                            }
+                        }
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(Color.White, RoundedCornerShape(25.dp)),
+                        .padding(horizontal = 4.dp), // Beri sedikit padding agar tidak menempel ke tepi
                     shape = RoundedCornerShape(25.dp),
-                    // PERBAIKAN ERROR: Menggunakan OutlinedTextFieldDefaults.colors
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Color.Transparent,
                         unfocusedBorderColor = Color.Transparent,
                         focusedContainerColor = Color.White,
                         unfocusedContainerColor = Color.White
-                    )
+                    ),
+                    singleLine = true // Pastikan hanya satu baris
                 )
             }
 

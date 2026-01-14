@@ -12,6 +12,8 @@ import com.example.projectakhir.viewmodel.HomeViewModel
 import com.example.projectakhir.viewmodel.KelolaProdukViewModel
 import com.example.projectakhir.viewmodel.LaporanViewModel
 import com.example.projectakhir.viewmodel.LoginViewModel
+import com.example.projectakhir.viewmodel.ProfileViewModel
+import com.example.projectakhir.viewmodel.RegisterViewModel
 import com.example.projectakhir.viewmodel.TransaksiViewModel
 
 object PenyediaViewModel {
@@ -34,13 +36,17 @@ object PenyediaViewModel {
                 repositoriDataProduk = aplikasiManageProduk().container.repositoriDataProduk
             )
         }
-        // Tambahkan di dalam object PenyediaViewModel.Factory
         initializer {
             TransaksiViewModel(aplikasiManageProduk().container.repositoriDataProduk)
         }
-        // Tambahkan di dalam object PenyediaViewModel.Factory
         initializer {
             LaporanViewModel(aplikasiManageProduk().container.repositoriDataProduk)
+        }
+        initializer {
+            ProfileViewModel(aplikasiManageProduk().container.repositoriDataProduk)
+        }
+        initializer {
+            RegisterViewModel(aplikasiManageProduk().container.repositoriDataProduk)
         }
     }
 }

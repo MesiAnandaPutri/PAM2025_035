@@ -17,6 +17,10 @@ class EntryViewModel(private val repositoriDataProduk: RepositoriDataProduk) : V
     var uiStateProduk by mutableStateOf(UIStateProduk())
         private set
 
+    fun isAdmin(): Boolean {
+        return repositoriDataProduk.currentUser?.role == "Admin"
+    }
+
     fun updateUIState(detailProduk: DetailProduk) {
         uiStateProduk = uiStateProduk.copy(
             detailProduk = detailProduk,
@@ -24,12 +28,11 @@ class EntryViewModel(private val repositoriDataProduk: RepositoriDataProduk) : V
         )
     }
 
-    /**
-     * PERBAIKAN: Fungsi ini tidak lagi 'suspend'.
-     * Ia akan menangani coroutine-nya sendiri menggunakan viewModelScope
-     * dan menggunakan callbacks untuk berkomunikasi dengan UI.
-     */
     fun saveProduk(onSuccess: () -> Unit, onError: (String) -> Unit) {
+        if (!isAdmin()) {
+            onError("Akses ditolak: Hanya Admin yang dapat menambah produk.")
+            return
+        }
         if (!validasiInput()) {
             onError("Input tidak valid. Harap periksa kembali semua data.")
             return

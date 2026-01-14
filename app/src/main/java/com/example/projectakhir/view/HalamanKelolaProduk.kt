@@ -1,15 +1,15 @@
 package com.example.projectakhir.view
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
@@ -46,27 +46,7 @@ fun HalamanKelolaProduk(
 ) {
     val uiState = kelolaProdukViewModel.kelolaProdukUIState
 
-    // 1. Dialog Konfirmasi Hapus
-    uiState.produkForDeletion?.let { produk ->
-        DeleteConfirmationDialog(
-            produk = produk,
-            onConfirm = { kelolaProdukViewModel.deleteProduk() },
-            onDismiss = { kelolaProdukViewModel.dismissDeleteDialog() }
-        )
-    }
-
-    // 2. Dialog Input Restock
-    uiState.produkForRestock?.let { produk ->
-        RestockDialog(
-            produkName = produk.produk_name,
-            amount = uiState.restockAmount,
-            onAmountChange = { kelolaProdukViewModel.updateRestockAmount(it) },
-            onConfirm = { kelolaProdukViewModel.restockProduk() },
-            onDismiss = { kelolaProdukViewModel.dismissRestockDialog() }
-        )
-    }
-
-    // 3. Lifecycle Observer (Sudah benar)
+    // 1. Lifecycle Observer untuk Refresh Data Otomatis
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -78,8 +58,28 @@ fun HalamanKelolaProduk(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    Column(modifier = modifier.fillMaxSize()) {
-        // --- Header (Sudah benar) ---
+    // 2. Dialog Konfirmasi Hapus
+    uiState.produkForDeletion?.let { produk ->
+        DeleteConfirmationDialog(
+            produk = produk,
+            onConfirm = { kelolaProdukViewModel.deleteProduk() },
+            onDismiss = { kelolaProdukViewModel.dismissDeleteDialog() }
+        )
+    }
+
+    // 3. Dialog Input Restock
+    uiState.produkForRestock?.let { produk ->
+        RestockDialog(
+            produkName = produk.produk_name,
+            amount = uiState.restockAmount,
+            onAmountChange = { kelolaProdukViewModel.updateRestockAmount(it) },
+            onConfirm = { kelolaProdukViewModel.restockProduk() },
+            onDismiss = { kelolaProdukViewModel.dismissRestockDialog() }
+        )
+    }
+
+    Column(modifier = modifier.fillMaxSize().background(Color(0xFFF5F5F5))) {
+        // --- Header ---
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -94,41 +94,118 @@ fun HalamanKelolaProduk(
             Text("${uiState.listProduk.size} produk tersedia", fontSize = 14.sp, color = Color.DarkGray)
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Search Bar (Sudah benar)
+            // Search Bar
             OutlinedTextField(
-                value = "",
-                onValueChange = {},
-                label = { Text("Cari nama barang...") },
+                value = uiState.searchQuery,
+                onValueChange = { kelolaProdukViewModel.onSearchQueryChange(it) },
+                placeholder = { Text("Cari nama barang...") },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Cari") },
-                trailingIcon = { Icon(painterResource(id = R.drawable.logo), contentDescription = "Filter") },
+                trailingIcon = {
+                    if (uiState.searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { kelolaProdukViewModel.onSearchQueryChange("") }) {
+                            Icon(Icons.Default.Close, contentDescription = "Clear")
+                        }
+                    }
+                },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(32.dp),
-                colors = TextFieldDefaults.colors(
+                colors = OutlinedTextFieldDefaults.colors(
                     focusedContainerColor = Color.White,
                     unfocusedContainerColor = Color.White,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent
+                    disabledContainerColor = Color.White,
+                    focusedBorderColor = Color.Transparent,
+                    unfocusedBorderColor = Color.Transparent,
                 )
             )
         }
 
-        // --- Daftar Produk (PERBAIKAN DI SINI) ---
+        // --- Daftar Produk ---
         LazyColumn(
+            // PERBAIKAN: Gunakan weight(1f) agar LazyColumn mengambil sisa layar
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            items(uiState.listProduk) { produk ->
+            items(
+                items = uiState.filteredProduk,
+                key = { "${it.produk_id}_${it.produk_name}" }
+            ) { produk ->
                 ProdukItem(
                     produk = produk,
                     onEditClicked = { onEditClicked(produk.produk_id) },
                     onDeleteClicked = { kelolaProdukViewModel.setProdukForDeletion(produk) },
-                    onRestockClicked = { kelolaProdukViewModel.setProdukForRestock(produk) } // Tambahkan ini
+                    onRestockClicked = { kelolaProdukViewModel.setProdukForRestock(produk) }
                 )
             }
         }
     }
 }
 
+@Composable
+fun ProdukItem(
+    produk: DataProduk,
+    onEditClicked: () -> Unit,
+    onDeleteClicked: () -> Unit,
+    onRestockClicked: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Icon Placeholder
+            Surface(
+                modifier = Modifier.size(50.dp),
+                shape = RoundedCornerShape(12.dp),
+                color = Color(0xFFF0F0F0)
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.kelola),
+                    contentDescription = null,
+                    modifier = Modifier.padding(10.dp),
+                    tint = Color.Gray
+                )
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(produk.produk_name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text("${produk.kategori} - ${produk.unit}", fontSize = 12.sp, color = Color.Gray)
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    val stockColor = if (produk.stock_qty <= 5) Color.Red else Color(0xFF4CAF50)
+                    Text("Stok: ${produk.stock_qty}", fontSize = 12.sp, color = stockColor, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text("Rp ${produk.harga}", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold)
+                }
+            }
+
+            // Action Buttons
+            Row {
+                IconButton(onClick = onRestockClicked) {
+                    Icon(painterResource(id = R.drawable.lanjut), contentDescription = "Restock", tint = Color.DarkGray)
+                }
+                IconButton(onClick = onEditClicked) {
+                    Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Color.Gray)
+                }
+                IconButton(onClick = onDeleteClicked) {
+                    Icon(Icons.Default.Delete, contentDescription = "Hapus", tint = Color.Red.copy(alpha = 0.7f))
+                }
+            }
+        }
+    }
+}
+
+// Dialog Restock dan DeleteConfirmationDialog tetap sama seperti kode Anda sebelumnya
 @Composable
 fun RestockDialog(
     produkName: String,
@@ -160,68 +237,6 @@ fun RestockDialog(
     )
 }
 
-@Composable
-fun ProdukItem(
-    produk: DataProduk,
-    onEditClicked: () -> Unit,
-    onDeleteClicked: () -> Unit,
-    onRestockClicked: () -> Unit,
-    modifier: Modifier = Modifier) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(60.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Color.LightGray.copy(alpha = 0.5f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    // TODO: Tampilkan gambar produk jika img_path tersedia
-                }
-                Spacer(modifier = Modifier.width(16.dp))
-                Column {
-                    Text(produk.produk_name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                    Text("${produk.kategori} - ${produk.unit}", fontSize = 14.sp, color = Color.Gray)
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        val stockColor = if (produk.stock_qty <= 10) Color.Red.copy(alpha = 0.3f) else limeColor.copy(alpha = 0.3f)
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(stockColor)
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
-                        ) {
-                            Text("Stok: ${produk.stock_qty}", fontSize = 12.sp, color = Color.Black)
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Rp ${produk.harga}", fontSize = 14.sp, color = Color.Gray)
-                    }
-                }
-            }
-
-            Row {
-                IconButton(onClick = onEditClicked) {
-                    Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Color.Gray)
-                }
-                IconButton(onClick = onDeleteClicked) {
-                    Icon(Icons.Default.Delete, contentDescription = "Hapus", tint = Color.Gray)
-                }
-                IconButton(onClick = onRestockClicked) {
-                    Icon(painterResource(id = R.drawable.lanjut), "Restock", tint = Color.DarkGray) // Gunakan icon yg sesuai
-                }
-            }
-        }
-    }
-}
 
 @Composable
 fun DeleteConfirmationDialog(

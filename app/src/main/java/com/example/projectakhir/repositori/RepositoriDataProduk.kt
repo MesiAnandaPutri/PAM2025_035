@@ -20,6 +20,8 @@ interface RepositoriDataProduk {
     suspend fun restockProduct(id: Int, qtyIn: Int): BaseResponse
     suspend fun createTransaction(produkId: Int, userId: Int, qtyOut: Int): TransactionResponse
     suspend fun getHistory(): List<HistoryLog>
+
+    var currentUser: UserData?
 }
 
 
@@ -27,9 +29,30 @@ class NetworkRepositoriDataProduk(
     private val serviceApiKatalog: ServiceApiKatalog
 ) : RepositoriDataProduk {
 
-    override suspend fun login(loginRequest: LoginRequest) = serviceApiKatalog.login(loginRequest)
-    override suspend fun register(registerRequest: RegisterRequest) = serviceApiKatalog.register(registerRequest)
 
+    override suspend fun login(loginRequest: LoginRequest): LoginResponse {
+        return try {
+            val response = serviceApiKatalog.login(loginRequest)
+            if (response.success) {
+                currentUser = response.data
+            }
+            response
+        } catch (e: retrofit2.HttpException) {
+            LoginResponse(success = false, message = "Email atau Password salah (500)")
+        } catch (e: Exception) {
+            LoginResponse(success = false, message = "Gagal login: ${e.message}")
+        }
+    }
+    override suspend fun register(registerRequest: RegisterRequest): BaseResponse {
+        return try {
+            serviceApiKatalog.register(registerRequest)
+        } catch (e: retrofit2.HttpException) {
+            // Jika server 500, kirim pesan gagal yang rapi
+            BaseResponse(success = false, message = "Username sudah terdaftar atau server error (500)")
+        } catch (e: Exception) {
+            BaseResponse(success = false, message = "Kesalahan: ${e.message}")
+        }
+    }
     // PERBAIKAN: Ambil respons dari API, lalu ekstrak dan kembalikan list .data
     override suspend fun getProduk(): List<DataProduk> {
         return serviceApiKatalog.getProduk().data
@@ -55,4 +78,7 @@ class NetworkRepositoriDataProduk(
     override suspend fun getHistory(): List<HistoryLog> {
         return serviceApiKatalog.getHistory().data
     }
+    override var currentUser: UserData? = null
+
+
 }

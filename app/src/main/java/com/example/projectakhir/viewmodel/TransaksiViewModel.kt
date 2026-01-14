@@ -38,7 +38,10 @@ class TransaksiViewModel(private val repositoriDataProduk: RepositoriDataProduk)
             uiState = uiState.copy(isLoading = true)
             try {
                 val produk = repositoriDataProduk.getProduk()
-                uiState = uiState.copy(listProduk = produk, filteredProduk = produk, isLoading = false)
+                uiState = uiState.copy(listProduk = produk,
+                    filteredProduk = if (uiState.searchQuery.isEmpty()) produk
+                    else produk.filter { it.produk_name.contains(uiState.searchQuery, ignoreCase = true) },
+                            isLoading = false)
             } catch (e: IOException) {
                 uiState = uiState.copy(errorMessage = "Gagal memuat data produk", isLoading = false)
             }
@@ -46,8 +49,13 @@ class TransaksiViewModel(private val repositoriDataProduk: RepositoriDataProduk)
     }
 
     fun updateSearch(query: String) {
-        val filtered = uiState.listProduk.filter {
-            it.produk_name.contains(query, ignoreCase = true)
+        val filtered = if (query.isEmpty()) {
+            uiState.listProduk
+        } else {
+            uiState.listProduk.filter {
+                it.produk_name.contains(query, ignoreCase = true) ||
+                        it.kategori.contains(query, ignoreCase = true)
+            }
         }
         uiState = uiState.copy(searchQuery = query, filteredProduk = filtered)
     }

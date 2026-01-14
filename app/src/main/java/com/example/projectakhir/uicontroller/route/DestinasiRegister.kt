@@ -1,4 +1,8 @@
 package com.example.projectakhir.uicontroller.route
 
-object DestinasiRegister {
+import com.example.projectakhir.R
+
+object DestinasiRegister : DestinasiNavigasi {
+    override val route = "register"
+    override val titleRes = R.string.buat_akun
 }

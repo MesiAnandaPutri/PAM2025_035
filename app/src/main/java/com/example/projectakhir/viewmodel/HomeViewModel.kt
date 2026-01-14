@@ -11,25 +11,41 @@ import kotlinx.coroutines.launch
 import java.io.IOException
 
 data class HomeUIState(
-    val listProduk: List<DataProduk> = listOf()
+    val username: String = "",
+    val listProduk: List<DataProduk> = listOf(),
+    val jumlahTransaksi: Int = 0,
+    val totalPendapatan: Int = 0,
+    val isLoading: Boolean = false
 )
 
 class HomeViewModel(private val repositoriDataProduk: RepositoriDataProduk) : ViewModel() {
-
     var homeUIState by mutableStateOf(HomeUIState())
         private set
 
-    init {
-        getProduk()
-    }
-
     fun getProduk() {
         viewModelScope.launch {
+            homeUIState = homeUIState.copy(isLoading = true)
             try {
-                // PERBAIKAN: repositori.getProduk() sekarang langsung mengembalikan List<DataProduk>
-                homeUIState = homeUIState.copy(listProduk = repositoriDataProduk.getProduk())
-            } catch (e: IOException) {
-                e.printStackTrace()
+                val produk = repositoriDataProduk.getProduk()
+                val history = repositoriDataProduk.getHistory()
+                val listTransaksi = history.filter { it.tipe == "keluar" }
+
+                val pendapatan = listTransaksi.sumOf { log ->
+                    val p = produk.find { it.produk_name == log.produk_name }
+                    (p?.harga ?: 0) * log.jumlah
+                }
+                val user = repositoriDataProduk.currentUser
+
+                homeUIState = homeUIState.copy(
+                    username = user?.username ?: "Guest", // Update Nama di sini
+                    listProduk = produk,
+                    jumlahTransaksi = listTransaksi.size,
+                    totalPendapatan = pendapatan,
+                    isLoading = false
+                )
+
+            } catch (e: Exception) {
+                homeUIState = homeUIState.copy(isLoading = false)
             }
         }
     }
