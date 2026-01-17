@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -16,12 +17,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.example.projectakhir.R
 import com.example.projectakhir.viewmodel.TransaksiViewModel
 import com.example.projectakhir.viewmodel.provider.PenyediaViewModel
@@ -29,6 +32,7 @@ import com.example.projectakhir.viewmodel.provider.PenyediaViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HalamanTransaksi(
+    onBackClicked: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: TransaksiViewModel = viewModel(factory = PenyediaViewModel.Factory)
 ) {
@@ -90,9 +94,20 @@ fun HalamanTransaksi(
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Spacer(modifier = Modifier.width(48.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = onBackClicked) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Kembali ke Home",
+                            tint = Color.Black
+                        )
+                    }
+                    Spacer(modifier = Modifier.weight(1f))
                     Text("Input Transaksi", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.weight(1f))
                     TextButton(onClick = { viewModel.resetTransaksi() }) {
                         Text("Reset", color = Color.Red, fontWeight = FontWeight.Bold)
                     }
@@ -151,12 +166,27 @@ fun HalamanTransaksi(
                                 shape = RoundedCornerShape(8.dp),
                                 color = Color(0xFFF0F0F0)
                             ) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.kelola),
-                                    contentDescription = null,
-                                    modifier = Modifier.padding(10.dp),
-                                    tint = Color.Gray
-                                )
+                                val baseUrl = "http://10.0.2.2:3000/uploads/"
+                                val fullUrl = "$baseUrl${produk.img_path}"
+                                if (produk.img_path.isNotEmpty()) {
+                                    AsyncImage(
+                                        model = fullUrl,
+                                        contentDescription = "Foto ${produk.produk_name}",
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = ContentScale.Crop,
+                                        // Menampilkan icon kelola jika gambar sedang loading atau error
+                                        placeholder = painterResource(id = R.drawable.kelola),
+                                        error = painterResource(id = R.drawable.kelola)
+                                    )
+                                } else {
+                                    // Jika path kosong di database
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.kelola),
+                                        contentDescription = null,
+                                        modifier = Modifier.padding(10.dp),
+                                        tint = Color.Gray
+                                    )
+                                }
                             }
                             Spacer(modifier = Modifier.width(12.dp))
 
