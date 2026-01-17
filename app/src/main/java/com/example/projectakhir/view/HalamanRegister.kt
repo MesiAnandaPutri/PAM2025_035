@@ -55,7 +55,7 @@ fun HalamanRegister(
 
         Text("Create an account", fontSize = 28.sp, fontWeight = FontWeight.Bold)
         Text(
-            "Create your account, it takes less than a minute. Enter your email and password",
+            "Create your account, it takes less than a minute. Enter your username and password",
             fontSize = 14.sp,
             color = Color.Gray,
             lineHeight = 20.sp
@@ -65,9 +65,9 @@ fun HalamanRegister(
 
         // Form Input
         OutlinedTextField(
-            value = uiState.email,
-            onValueChange = { viewModel.updateUIState(uiState.copy(email = it)) },
-            label = { Text("Email") },
+            value = uiState.username,
+            onValueChange = { viewModel.updateUIState(uiState.copy(username = it)) },
+            label = { Text("Username") },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp)
         )
