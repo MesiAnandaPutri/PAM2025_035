@@ -65,10 +65,18 @@ fun NavigasiApp(
                         }
                     },
                     onNavigateToLaporan = {
-                        navController.navigate(DestinasiLaporan.route) {
-                            popUpTo(navController.graph.startDestinationId) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
+                        // Ambil data user yang sedang login dari repositori
+                        val userLogin = repositori.currentUser
+
+                        if (userLogin?.role == "Admin") {
+                            navController.navigate(DestinasiLaporan.route) {
+                                popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        } else {
+                            // Jika Staff, tampilkan pesan peringatan
+                            Toast.makeText(context, "Akses Ditolak: Hanya Admin yang dapat melihat Laporan", Toast.LENGTH_SHORT).show()
                         }
                     },
                     onNavigateToProfile = {
@@ -120,23 +128,50 @@ fun NavigasiApp(
                 HalamanHome(
                     onKelolaProdukClicked = { navController.navigate(DestinasiKelolaProduk.route) },
                     onTransaksiClicked = { navController.navigate(DestinasiTransaksi.route) },
-                    onLaporanClicked = { navController.navigate(DestinasiLaporan.route) }
+                    onLaporanClicked = { navController.navigate(DestinasiLaporan.route) },
+                    onProfileClicked = {navController.navigate(DestinasiProfile.route)}
                 )
             }
 
             composable(route = DestinasiKelolaProduk.route) {
                 HalamanKelolaProduk(
-                    onBackClicked = { navController.popBackStack() },
+                    onBackClicked = {
+                        // Navigasi paksa ke Home
+                        navController.navigate(DestinasiHome.route) {
+                            // Menghapus tumpukan navigasi sampai ke Home
+                            popUpTo(DestinasiHome.route) {
+                                inclusive = true
+                            }
+                            launchSingleTop = true
+                        }
+                    },
                     onEditClicked = { id -> navController.navigate("${DestinasiEdit.route}/$id") }
                 )
             }
 
             composable(route = DestinasiTransaksi.route) {
-                HalamanTransaksi()
-            }
+                HalamanTransaksi(
+                    onBackClicked = {
+                        navController.navigate(DestinasiHome.route) {
+                            popUpTo(DestinasiHome.route) {
+                                inclusive = true
+                            }
+                            launchSingleTop = true
+                        }
+                    }
+                )            }
 
             composable(route = DestinasiLaporan.route) {
-                HalamanLaporan()
+                HalamanLaporan(
+                    onBackClicked = {
+                        navController.navigate(DestinasiHome.route) {
+                            popUpTo(DestinasiHome.route) {
+                                inclusive = true
+                            }
+                            launchSingleTop = true
+                        }
+                    }
+                )
             }
 
             composable(
@@ -153,8 +188,16 @@ fun NavigasiApp(
                 HalamanProfile(
                     onLogoutClick = {
                         navController.navigate(DestinasiLogin.route) {
-                            // Hapus semua history navigasi agar tidak bisa "Back" ke Home setelah logout
                             popUpTo(0) { inclusive = true }
+                        }
+                    },
+                    onBackClicked = {
+                        // Navigasi paksa ke Home dan bersihkan stack
+                        navController.navigate(DestinasiHome.route) {
+                            popUpTo(DestinasiHome.route) {
+                                inclusive = true
+                            }
+                            launchSingleTop = true
                         }
                     }
                 )
