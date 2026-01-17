@@ -12,7 +12,7 @@ import retrofit2.HttpException
 import java.io.IOException
 
 data class RegisterUIState(
-    val email: String = "",
+    val username: String = "",
     val pass: String = "",
     val isLoading: Boolean = false
 )
@@ -26,10 +26,8 @@ class RegisterViewModel(private val repositoriDataProduk: RepositoriDataProduk) 
         registerUIState = newState
     }
 
-    // Lokasi: com/example/projectakhir/viewmodel/RegisterViewModel.kt
-
     fun register(onSuccess: () -> Unit, onError: (String) -> Unit) {
-        if (registerUIState.email.isBlank() || registerUIState.pass.isBlank()) {
+        if (registerUIState.username.isBlank() || registerUIState.pass.isBlank()) {
             onError("Email dan Password tidak boleh kosong")
             return
         }
@@ -38,7 +36,7 @@ class RegisterViewModel(private val repositoriDataProduk: RepositoriDataProduk) 
             registerUIState = registerUIState.copy(isLoading = true)
             try {
                 val request = RegisterRequest(
-                    username = registerUIState.email,
+                    username = registerUIState.username,
                     password = registerUIState.pass,
                     user_role = "Staff" // Sudah sesuai ENUM('Admin', 'Staff')
                 )
@@ -51,9 +49,7 @@ class RegisterViewModel(private val repositoriDataProduk: RepositoriDataProduk) 
                     onError(response.message)
                 }
             } catch (e: HttpException) {
-                // PERBAIKAN: Menangkap error 500 agar tidak Fatal Exception
                 val errorBody = e.response()?.errorBody()?.string()
-                // Biasanya 500 di register disebabkan username sudah terpakai
                 onError("Gagal mendaftar: Username mungkin sudah digunakan atau server bermasalah.")
             } catch (e: IOException) {
                 onError("Masalah jaringan. Pastikan server aktif.")
