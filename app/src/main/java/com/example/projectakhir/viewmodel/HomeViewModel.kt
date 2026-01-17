@@ -12,6 +12,7 @@ import java.io.IOException
 
 data class HomeUIState(
     val username: String = "",
+    val role: String = "",
     val listProduk: List<DataProduk> = listOf(),
     val jumlahTransaksi: Int = 0,
     val totalPendapatan: Int = 0,
@@ -38,6 +39,7 @@ class HomeViewModel(private val repositoriDataProduk: RepositoriDataProduk) : Vi
 
                 homeUIState = homeUIState.copy(
                     username = user?.username ?: "Guest", // Update Nama di sini
+                    role = user?.role ?: "",
                     listProduk = produk,
                     jumlahTransaksi = listTransaksi.size,
                     totalPendapatan = pendapatan,
