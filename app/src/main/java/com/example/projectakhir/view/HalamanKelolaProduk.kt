@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.example.projectakhir.R
 import com.example.projectakhir.modeldata.DataProduk
 import com.example.projectakhir.ui.theme.ProjectAkhirTheme
@@ -78,7 +79,9 @@ fun HalamanKelolaProduk(
         )
     }
 
-    Column(modifier = modifier.fillMaxSize().background(Color(0xFFF5F5F5))) {
+    Column(modifier = modifier
+        .fillMaxSize()
+        .background(Color(0xFFF5F5F5))) {
         // --- Header ---
         Column(
             modifier = Modifier
@@ -151,6 +154,9 @@ fun ProdukItem(
     onRestockClicked: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val baseUrl = "http://10.0.2.2:3000/uploads/"
+    val fullUrl = "${baseUrl}${produk.img_path}"
+
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -167,12 +173,22 @@ fun ProdukItem(
                 shape = RoundedCornerShape(12.dp),
                 color = Color(0xFFF0F0F0)
             ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.kelola),
-                    contentDescription = null,
-                    modifier = Modifier.padding(10.dp),
-                    tint = Color.Gray
-                )
+                if (produk.img_path.isNotEmpty()) {
+                    AsyncImage(
+                        model = fullUrl,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                        error = painterResource(R.drawable.kelola)
+                    )
+                } else {
+                    Icon(
+                        painter = painterResource(id = R.drawable.kelola),
+                        contentDescription = null,
+                        modifier = Modifier.padding(10.dp),
+                        tint = Color.Gray
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.width(16.dp))
