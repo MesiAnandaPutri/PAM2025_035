@@ -1,12 +1,16 @@
 package com.example.projectakhir.view
 
+import android.content.Context
+import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -16,10 +20,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.projectakhir.modeldata.UIStateProduk
 import com.example.projectakhir.ui.theme.ProjectAkhirTheme
 import com.example.projectakhir.viewmodel.EditViewModel
 import com.example.projectakhir.viewmodel.provider.PenyediaViewModel
+import java.io.File
 
 @Composable
 fun HalamanEdit(
@@ -29,6 +33,9 @@ fun HalamanEdit(
 ) {
     val context = LocalContext.current
     val uiState = viewModel.produkUiState
+
+    // State lokal untuk menampung gambar baru yang dipilih dari galeri
+    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
 
     Card(
         modifier = modifier
@@ -43,7 +50,7 @@ fun HalamanEdit(
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Header
+            // --- Header ---
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -58,14 +65,19 @@ fun HalamanEdit(
             Divider(color = limeColor, thickness = 2.dp, modifier = Modifier.width(50.dp))
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Form
+            // --- Form Input ---
+            // FormInputProduk akan otomatis menampilkan gambar lama dari server
+            // atau gambar baru dari selectedImageUri
             FormInputProduk(
                 detailProduk = uiState.detailProduk,
-                onValueChange = { viewModel.updateUiState(UIStateProduk(detailProduk = it)) }
+                onValueChange = { viewModel.updateUiState(uiState.copy(detailProduk = it)) },
+                imageUri = selectedImageUri,
+                onImageSelected = { selectedImageUri = it }
             )
+
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Tombol
+            // --- Action Buttons ---
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -77,15 +89,27 @@ fun HalamanEdit(
                 ) {
                     Text("Batal")
                 }
+
                 Button(
                     onClick = {
-                        viewModel.updateProduk(
-                            onSuccess = { onNavigateUp() },
+                        // 1. Konversi URI ke File jika ada gambar baru yang dipilih
+                        val imageFile = selectedImageUri?.let { uri ->
+                            uriToFile(context, uri)
+                        }
+
+                        // 2. Panggil fungsi update khusus yang menangani upload gambar & data produk
+                        viewModel.updateProdukWithImage(
+                            file = imageFile,
+                            onSuccess = {
+                                Toast.makeText(context, "Perubahan berhasil disimpan", Toast.LENGTH_SHORT).show()
+                                onNavigateUp()
+                            },
                             onError = { errorMessage ->
                                 Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show()
                             }
                         )
                     },
+                    // Tombol aktif hanya jika validasi input terpenuhi
                     enabled = uiState.isEntryValid,
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(8.dp),
@@ -97,6 +121,8 @@ fun HalamanEdit(
         }
     }
 }
+
+
 
 @Preview(showBackground = true)
 @Composable
