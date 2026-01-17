@@ -2,6 +2,10 @@ package com.example.projectakhir.repositori
 
 import com.example.projectakhir.apiservice.ServiceApiKatalog
 import com.example.projectakhir.modeldata.*
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import java.io.File
 
 interface RepositoriDataProduk {
     // Auth
@@ -15,11 +19,14 @@ interface RepositoriDataProduk {
     suspend fun postProduk(dataProduk: DataProduk): AddProductResponse
     suspend fun editSatuProduk(id: Int, dataProduk: DataProduk): BaseResponse
     suspend fun hapusSatuProduk(id: Int): BaseResponse
+    suspend fun uploadImage(file: File): AddProductResponse
 
     // Transaksi & Restock
     suspend fun restockProduct(id: Int, qtyIn: Int): BaseResponse
     suspend fun createTransaction(produkId: Int, userId: Int, qtyOut: Int): TransactionResponse
     suspend fun getHistory(): List<HistoryLog>
+    suspend fun getAllUsers(): List<UserData>
+    suspend fun deleteUser(id: Int): BaseResponse
 
     var currentUser: UserData?
 }
@@ -71,6 +78,12 @@ class NetworkRepositoriDataProduk(
         return serviceApiKatalog.restockProduct(id, RestockRequest(qtyIn))
     }
 
+    override suspend fun uploadImage(file: File): AddProductResponse {
+        val requestFile = file.asRequestBody("image/*".toMediaTypeOrNull())
+        val body = MultipartBody.Part.createFormData("image", file.name, requestFile)
+        return serviceApiKatalog.uploadImage(body)
+    }
+
     override suspend fun createTransaction(produkId: Int, userId: Int, qtyOut: Int): TransactionResponse {
         val request = TransactionRequest(produk_id = produkId, user_id = userId, qty_out = qtyOut)
         return serviceApiKatalog.createTransaction(request)
@@ -78,6 +91,16 @@ class NetworkRepositoriDataProduk(
     override suspend fun getHistory(): List<HistoryLog> {
         return serviceApiKatalog.getHistory().data
     }
+
+    override suspend fun getAllUsers(): List<UserData> {
+        val response = serviceApiKatalog.getAllUsers()
+        return response.data // Ambil list dari dalam object response
+    }
+
+    override suspend fun deleteUser(id: Int): BaseResponse {
+        return serviceApiKatalog.deleteUser(id)
+    }
+
     override var currentUser: UserData? = null
 
 
