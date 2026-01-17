@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">ProjectAkhir</string>
     <string name="login">Login</string>
-    <string name="email">Email</string>
+    <string name="username">Username</string>
     <string name="password">Password</string>
     <string name="log_in">Log In</string>
     <string name="lupa_password">Lupa password?</string>
