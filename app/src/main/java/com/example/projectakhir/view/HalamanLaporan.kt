@@ -28,6 +28,7 @@ import com.example.projectakhir.viewmodel.provider.PenyediaViewModel
 
 @Composable
 fun HalamanLaporan(
+    onBackClicked: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: LaporanViewModel = viewModel(factory = PenyediaViewModel.Factory)
 ) {
@@ -54,6 +55,18 @@ fun HalamanLaporan(
                 .padding(top = 40.dp, bottom = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onBackClicked) {
+                    Icon(
+                        imageVector = Icons.Default.ArrowBack,
+                        contentDescription = "Kembali",
+                        tint = Color.Black
+                    )
+                }
+            }
             Text("Laporan Stok", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
             Text("Riwayat aktivitas stok produk", fontSize = 14.sp, color = Color.DarkGray)
         }
