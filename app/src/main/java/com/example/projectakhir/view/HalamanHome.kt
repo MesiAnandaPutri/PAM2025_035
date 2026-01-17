@@ -1,5 +1,6 @@
 package com.example.projectakhir.view
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -13,8 +14,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -41,11 +44,13 @@ fun HalamanHome(
     onKelolaProdukClicked: () -> Unit,
     onTransaksiClicked: () -> Unit,
     onLaporanClicked: () -> Unit,
+    onProfileClicked: () -> Unit,
     modifier: Modifier = Modifier,
     homeViewModel: HomeViewModel = viewModel(factory = PenyediaViewModel.Factory)
 ) {
     val state = homeViewModel.homeUIState
     val lifecycleOwner = LocalLifecycleOwner.current
+    val context = LocalContext.current
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -83,7 +88,20 @@ fun HalamanHome(
         Text("Quick Actions", fontSize = 18.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(16.dp))
 
-        KelolaProdukCard(onClick = onKelolaProdukClicked)
+        KelolaProdukCard(
+            onClick = {
+                if (state.role == "Admin") {
+                    onKelolaProdukClicked()
+                } else {
+                    Toast.makeText(
+                        context,
+                        "Akses Ditolak: Hanya Admin yang dapat mengelola produk",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            },
+        )
+
         Spacer(modifier = Modifier.height(16.dp))
 
         Row(
@@ -98,12 +116,28 @@ fun HalamanHome(
             ActionCard(
                 label = "Laporan",
                 imageResId = R.drawable.laporan,
-                modifier = Modifier.clickable { onLaporanClicked() }
+                modifier = Modifier
+                    .clickable {
+                        if (state.role == "Admin") {
+                            onLaporanClicked()
+                        } else {
+                            // Jika Staff, tampilkan pesan peringatan dan tidak pindah halaman
+                            Toast.makeText(
+                                context,
+                                "Akses Ditolak: Hanya Admin yang dapat melihat laporan",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+                    .then(
+                        // Memberikan efek visual sedikit pudar jika bukan admin agar terlihat "disabled"
+                        if (state.role != "Admin") Modifier.alpha(0.5f) else Modifier
+                    )
             )
             ActionCard(
                 label = "Profile",
                 imageResId = R.drawable.profile,
-                modifier = Modifier.clickable { /* Handle Profile */ }
+                modifier = Modifier.clickable { onProfileClicked() }
             )
         }
     }
@@ -263,8 +297,9 @@ fun PreviewHalamanHome() {
     ProjectAkhirTheme {
         HalamanHome(
             onKelolaProdukClicked = {},
-            onTransaksiClicked = {}, // Parameter yang dibutuhkan
-            onLaporanClicked = {}    // Parameter yang dibutuhkan
+            onTransaksiClicked = {},
+            onLaporanClicked = {},
+            onProfileClicked = {}
         )
     }
 }
