@@ -11,7 +11,7 @@ import kotlinx.coroutines.launch
 import java.io.IOException
 
 data class LoginUIState(
-    val email: String = "",
+    val username: String = "",
     val pass: String = ""
 )
 
@@ -26,14 +26,14 @@ class LoginViewModel(private val repositoriDataProduk: RepositoriDataProduk) : V
 
     fun tryLogin(onSuccess: () -> Unit, onError: (String) -> Unit) {
         if (!validasiInput()) {
-            onError("Email dan Password tidak boleh kosong.")
+            onError("Username dan Password tidak boleh kosong.")
             return
         }
 
         viewModelScope.launch {
             try {
                 // PERBAIKAN: Panggil API login melalui repositori
-                val loginRequest = LoginRequest(username = loginUIState.email, password = loginUIState.pass)
+                val loginRequest = LoginRequest(username = loginUIState.username, password = loginUIState.pass)
                 val response = repositoriDataProduk.login(loginRequest)
 
                 if (response.success) {
@@ -50,6 +50,6 @@ class LoginViewModel(private val repositoriDataProduk: RepositoriDataProduk) : V
     }
 
     private fun validasiInput(): Boolean {
-        return loginUIState.email.isNotBlank() && loginUIState.pass.isNotBlank()
+        return loginUIState.username.isNotBlank() && loginUIState.pass.isNotBlank()
     }
 }
