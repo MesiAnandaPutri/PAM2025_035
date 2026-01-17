@@ -1,5 +1,7 @@
 package com.example.projectakhir.viewmodel
 
+import android.content.Context
+import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -10,10 +12,12 @@ import com.example.projectakhir.modeldata.UIStateProduk
 import com.example.projectakhir.modeldata.toDataProduk
 import com.example.projectakhir.repositori.RepositoriDataProduk
 import kotlinx.coroutines.launch
+import java.io.File
 import java.io.IOException
 
 class EntryViewModel(private val repositoriDataProduk: RepositoriDataProduk) : ViewModel() {
 
+    var imageUri by mutableStateOf<Uri?>(null) // Untuk preview di UI
     var uiStateProduk by mutableStateOf(UIStateProduk())
         private set
 
@@ -60,9 +64,41 @@ class EntryViewModel(private val repositoriDataProduk: RepositoriDataProduk) : V
         }
     }
 
+    fun saveProdukWithImage(file: File?, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        viewModelScope.launch {
+            try {
+                var finalImagePath = uiStateProduk.detailProduk.img_path
+
+                // 1. Jika ada file baru, upload dulu ke server
+                if (file != null) {
+                    val uploadRes = repositoriDataProduk.uploadImage(file)
+                    if (uploadRes.success) {
+                        // PERBAIKAN: Ambil filename, jika null baru gunakan message (sebagai fallback)
+                        finalImagePath = uploadRes.filename ?: ""
+
+                        if (finalImagePath.isEmpty()) {
+                            onError("Gagal mendapatkan nama file dari server")
+                            return@launch
+                        }
+                    }
+                }
+
+                // 2. Simpan data produk dengan path gambar yang baru
+                val produkData = uiStateProduk.detailProduk.copy(img_path = finalImagePath).toDataProduk()
+                val response = repositoriDataProduk.postProduk(produkData)
+
+                if (response.success) onSuccess() else onError(response.message)
+            } catch (e: Exception) {
+                onError(e.message ?: "Terjadi kesalahan")
+            }
+        }
+    }
+
     private fun validasiInput(detailProduk: DetailProduk = uiStateProduk.detailProduk): Boolean {
         return with(detailProduk) {
             produk_name.isNotBlank() && kategori.isNotBlank() && unit.isNotBlank() && harga > 0 && stock_qty >= 0
         }
     }
+
+
 }
