@@ -30,7 +30,7 @@ data class DetailProduk(
     val unit: String = "",
     val stock_qty: Int = 0,
     val harga: Int = 0,
-    val deskripsi: String? = null, // Nullable
+    val deskripsi: String? = null,
     val img_path: String = ""
 )
 
@@ -38,14 +38,16 @@ data class DetailProduk(
 data class ProductResponse(
     val success: Boolean,
     val message: String? = null,
-    val data: List<DataProduk> // List dari DataProduk kamu
+    val data: List<DataProduk>, // List dari DataProduk kamu
 )
 
 @Serializable
 data class AddProductResponse(
     val success: Boolean,
     val message: String,
-    val id: Int? = null
+    val id: Int? = null,
+    val filename: String? = null
+
 )
 
 fun DetailProduk.toDataProduk(): DataProduk = DataProduk(
