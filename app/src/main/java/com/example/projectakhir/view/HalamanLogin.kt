@@ -70,11 +70,10 @@ fun HalamanLogin(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Input Email
         OutlinedTextField(
-            value = loginUIState.email,
-            onValueChange = { loginViewModel.updateLoginUIState(loginUIState.copy(email = it)) },
-            label = { Text(stringResource(id = R.string.email)) },
+            value = loginUIState.username,
+            onValueChange = { loginViewModel.updateLoginUIState(loginUIState.copy(username = it)) },
+            label = { Text(stringResource(id = R.string.username)) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
         )
