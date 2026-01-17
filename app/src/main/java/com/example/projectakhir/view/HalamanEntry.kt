@@ -1,6 +1,10 @@
 package com.example.projectakhir.view
 
+import android.content.Context
+import android.net.Uri
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.runtime.getValue
@@ -28,11 +32,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.example.projectakhir.R
 import com.example.projectakhir.modeldata.DetailProduk
 import com.example.projectakhir.ui.theme.ProjectAkhirTheme
 import com.example.projectakhir.viewmodel.EntryViewModel
 import com.example.projectakhir.viewmodel.provider.PenyediaViewModel
+import java.io.File
 
 @Composable
 fun HalamanEntry(
@@ -44,6 +50,8 @@ fun HalamanEntry(
     val uiState = entryViewModel.uiStateProduk
     val context = LocalContext.current // Diperlukan untuk menampilkan Toast
     val isAdmin = entryViewModel.isAdmin()
+
+    val imageUri = entryViewModel.imageUri
 
     LaunchedEffect(isAdmin) {
         if (!isAdmin) {
@@ -83,10 +91,11 @@ fun HalamanEntry(
             // Form
             FormInputProduk(
                 detailProduk = uiState.detailProduk,
-                onValueChange = { entryViewModel.updateUIState(it) }
+                onValueChange = { entryViewModel.updateUIState(it) },
+                imageUri = imageUri,
+                onImageSelected = { entryViewModel.imageUri = it }
             )
             Spacer(modifier = Modifier.height(32.dp))
-
             // Tombol
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -101,15 +110,18 @@ fun HalamanEntry(
                 }
                 Button(
                     onClick = {
+                        val imageFile = entryViewModel.imageUri?.let { uri ->
+                            uriToFile(context, uri)
+                        }
                         // PERBAIKAN: Panggil fungsi saveProduk dari ViewModel dengan callbacks
-                        entryViewModel.saveProduk(
+                        entryViewModel.saveProdukWithImage(
+                            file = imageFile,
                             onSuccess = {
-                                // Hanya navigasi kembali jika penyimpanan berhasil
+                                Toast.makeText(context, "Produk berhasil disimpan", Toast.LENGTH_SHORT).show()
                                 onNavigateUp()
                             },
-                            onError = { errorMessage ->
-                                // Tampilkan pesan error jika gagal
-                                Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show()
+                            onError = { error ->
+                                Toast.makeText(context, error, Toast.LENGTH_LONG).show()
                             }
                         )
                     },
@@ -133,8 +145,18 @@ fun HalamanEntry(
 fun FormInputProduk(
     detailProduk: DetailProduk,
     onValueChange: (DetailProduk) -> Unit,
+    imageUri: Uri?,
+    onImageSelected: (Uri) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val baseUrl = "http://10.0.2.2:3000/uploads/"
+    val fullUrl = baseUrl + detailProduk.img_path
+
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let { onImageSelected(it) }
+    }
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -146,21 +168,20 @@ fun FormInputProduk(
                     .size(100.dp)
                     .clip(RoundedCornerShape(12.dp))
                     .background(limeColor.copy(alpha = 0.2f))
-                    .border(1.dp, limeColor, RoundedCornerShape(12.dp)),
+                    .border(1.dp, limeColor, RoundedCornerShape(12.dp))
+                    .clickable { launcher.launch("image/*") },
                 contentAlignment = Alignment.Center
-            ) {
-                Icon(painterResource(id = R.drawable.kelola), contentDescription = null, tint = Color.Gray, modifier = Modifier.size(40.dp))
-            }
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .offset(x = (-110).dp, y = 10.dp)
-                    .clip(CircleShape)
-                    .background(limeColor)
-                    .clickable { /* TODO: Fungsi upload gambar */ }
-                    .padding(8.dp)
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Tambah Gambar", tint = Color.Black)
+            ){
+                if (imageUri != null) {
+                    // Tampilkan gambar BARU yang baru dipilih dari galeri
+                    AsyncImage(model = imageUri, contentDescription = null, modifier = Modifier.fillMaxSize())
+                } else if (detailProduk.img_path.isNotEmpty()) {
+                    // Tampilkan gambar LAMA yang sudah ada di server
+                    AsyncImage(model = fullUrl, contentDescription = null, modifier = Modifier.fillMaxSize())
+                } else {
+                    // Tampilkan icon Tambah jika benar-benar kosong
+                    Icon(Icons.Default.Add, contentDescription = null)
+                }
             }
         }
 
@@ -250,6 +271,15 @@ fun DropdownMenuField(
         }
     }
 }
+fun uriToFile(context: Context, uri: Uri): File {
+    val inputStream = context.contentResolver.openInputStream(uri)
+    val tempFile = File(context.cacheDir, "temp_image_${System.currentTimeMillis()}.jpg")
+    tempFile.outputStream().use { output ->
+        inputStream?.copyTo(output)
+    }
+    return tempFile
+}
+
 
 @Preview(showBackground = true)
 @Composable
