@@ -75,20 +75,30 @@ class EditViewModel(
         viewModelScope.launch {
             try {
                 var finalPath = produkUiState.detailProduk.img_path
+
+                // 1. Jika user memilih gambar baru, upload dulu
                 if (file != null) {
                     val res = repositoriDataProduk.uploadImage(file)
                     if (res.success) {
-                        // PERBAIKAN: Gunakan filename dari server
-                        finalPath = res.filename ?: ""
-                    }                }
+                        finalPath = res.filename ?: finalPath
+                    }
+                }
 
-                val response = repositoriDataProduk.editSatuProduk(
-                    produkId,
-                    produkUiState.detailProduk.copy(img_path = finalPath).toDataProduk()
-                )
-                if (response.success) onSuccess() else onError(response.message)
+                // 2. Kirim data ke API PUT
+                // Pastikan produk_id yang dikirim sesuai dengan ID produk yang sedang diedit
+                val produkData = produkUiState.detailProduk.copy(img_path = finalPath).toDataProduk()
+                val response = repositoriDataProduk.editSatuProduk(produkId, produkData)
+
+                if (response.success) {
+                    onSuccess()
+                } else {
+                    // Tampilkan pesan error spesifik dari server
+                    onError(response.message ?: "Gagal memperbarui produk")
+                }
             } catch (e: Exception) {
-                onError(e.message ?: "Error")
+                // Menangani crash jika server mati atau error 500
+                e.printStackTrace()
+                onError("Terjadi kesalahan: ${e.localizedMessage}")
             }
         }
     }

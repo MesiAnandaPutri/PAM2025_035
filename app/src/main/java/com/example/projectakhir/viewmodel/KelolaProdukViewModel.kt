@@ -63,18 +63,29 @@ class KelolaProdukViewModel(private val repositoriDataProduk: RepositoriDataProd
         kelolaProdukUIState = kelolaProdukUIState.copy(produkForRestock = null)
     }
 
+    // Lokasi: com/example/projectakhir/viewmodel/KelolaProdukViewModel.kt
+
     fun restockProduk() {
+        // Ambil jumlah dari state dan ID produk yang sedang dipilih
         val qty = kelolaProdukUIState.restockAmount.toIntOrNull() ?: 0
         val produkId = kelolaProdukUIState.produkForRestock?.produk_id
 
         if (qty > 0 && produkId != null) {
             viewModelScope.launch {
                 try {
-                    repositoriDataProduk.restockProduct(produkId, qty)
-                    dismissRestockDialog()
-                    getProduk() // Refresh data stok terbaru
+                    val response = repositoriDataProduk.restockProduct(produkId, qty)
+
+                    if (response.success) {
+                        // Jika sukses, tutup dialog dan refresh data produk
+                        dismissRestockDialog()
+                        getProduk()
+                    }
+                } catch (e: retrofit2.HttpException) {
+                    println("DEBUG_RESTOCK: Server Error (500) - ${e.message}")
                 } catch (e: Exception) {
+                    println("DEBUG_RESTOCK: Terjadi kesalahan - ${e.message}")
                     e.printStackTrace()
+                } finally {
                 }
             }
         }
@@ -87,15 +98,15 @@ class KelolaProdukViewModel(private val repositoriDataProduk: RepositoriDataProd
     fun deleteProduk() {
         viewModelScope.launch {
             try {
-                // Pastikan ada produk yang dipilih untuk dihapus
                 kelolaProdukUIState.produkForDeletion?.let { produk ->
                     repositoriDataProduk.hapusSatuProduk(produk.produk_id)
                 }
-            } catch (e: IOException) {
-                // Handle error
+            } catch (e: retrofit2.HttpException) {
+                println("DEBUG_HAPUS: Server Error (500) - ${e.message}")
+            } catch (e: Exception) {
+                println("DEBUG_HAPUS: Terjadi kesalahan - ${e.message}")
                 e.printStackTrace()
             } finally {
-                // Setelah selesai, tutup dialog dan muat ulang daftar produk
                 dismissDeleteDialog()
                 getProduk()
             }

@@ -32,7 +32,7 @@ fun NavigasiApp(
     Scaffold(
         bottomBar = {
             // Tampilkan BottomBar hanya jika bukan di halaman Login atau Entry
-            if (currentRoute != DestinasiLogin.route && currentRoute != DestinasiEntry.route && currentRoute != DestinasiEdit.routeWithArgs) {
+            if (currentRoute != DestinasiLogin.route && currentRoute != DestinasiRegister.route && currentRoute != DestinasiEntry.route && currentRoute != DestinasiEdit.routeWithArgs) {
                 AppBottomNavigationBar(
                     currentRoute = currentRoute,
                     onNavigateToHome = {

@@ -70,7 +70,10 @@ fun HalamanEdit(
             // atau gambar baru dari selectedImageUri
             FormInputProduk(
                 detailProduk = uiState.detailProduk,
-                onValueChange = { viewModel.updateUiState(uiState.copy(detailProduk = it)) },
+                onValueChange = { dataBaru ->
+                    // Memperbarui UI State di ViewModel
+                    viewModel.updateUiState(uiState.copy(detailProduk = dataBaru))
+                },
                 imageUri = selectedImageUri,
                 onImageSelected = { selectedImageUri = it }
             )

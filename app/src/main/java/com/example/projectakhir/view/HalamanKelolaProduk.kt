@@ -243,7 +243,11 @@ fun RestockDialog(
             )
         },
         confirmButton = {
-            Button(onClick = onConfirm, colors = ButtonDefaults.buttonColors(containerColor = limeColor)) {
+            Button(
+                onClick = onConfirm,
+                enabled = amount.isNotEmpty() && (amount.toIntOrNull() ?: 0) > 0,
+                colors = ButtonDefaults.buttonColors(containerColor = limeColor)
+            ) {
                 Text("Simpan", color = Color.Black)
             }
         },
